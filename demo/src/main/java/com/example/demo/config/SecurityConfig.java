@@ -13,14 +13,23 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                // 1. 在開發階段，建議先關閉 CSRF 以排除干擾
+                .csrf(csrf -> csrf.disable())
+
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/login", "/register", "/css/**").permitAll()
-                        .requestMatchers("/user/**").authenticated()
-                        .anyRequest().permitAll()
+                        .requestMatchers("/", "/login", "/login.css", "/register", "register.css", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/user/**").hasRole("USER") // 確保受保護的路徑需要權限
+                        .anyRequest().authenticated() // 建議改為 authenticated 確保安全
                 )
                 .formLogin(login -> login
                         .loginPage("/login")
-                        .defaultSuccessUrl("/user/profile")
+                        .loginProcessingUrl("/login") // 明確指定處理登入的 URL
+                        .defaultSuccessUrl("/user/profile", true) // true 表示強制跳轉到成功頁
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutSuccessUrl("/")
+                        .permitAll()
                 );
 
         return http.build();
